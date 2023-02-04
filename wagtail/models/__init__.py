@@ -649,6 +649,51 @@ class PreviewableMixin:
         handler.load_middleware()
         return handler.get_response(request)
 
+    def make_draft_request(
+        self, original_request=None, preview_mode=None, extra_request_attrs=None
+    ):
+        """
+        Simulate a request to this object, by constructing a fake HttpRequest object that is (as far
+        as possible) representative of a real request to this object's front-end URL, and invoking
+        serve_preview with that request (and the given preview_mode).
+
+        Used for previewing / moderation and any other place where we
+        want to display a view of this object in the admin interface without going through the regular
+        page routing logic.
+
+        If you pass in a real request object as original_request, additional information (e.g. client IP, cookies)
+        will be included in the dummy request.
+        """
+        dummy_meta = self._get_dummy_headers(original_request)
+        request = WSGIRequest(dummy_meta)
+
+        # Add a flag to let middleware know that this is a dummy request.
+        request.is_dummy = True
+
+        if extra_request_attrs:
+            for k, v in extra_request_attrs.items():
+                setattr(request, k, v)
+
+        obj = self
+
+        # Build a custom django.core.handlers.BaseHandler subclass that invokes serve_preview as
+        # the eventual view function called at the end of the middleware chain, rather than going
+        # through the URL resolver
+        class Handler(BaseHandler):
+            def _get_response(self, request):
+                request.is_preview = False 
+                request.preview_mode = preview_mode
+                response = obj.serve_preview(request, preview_mode)
+                if hasattr(response, "render") and callable(response.render):
+                    response = response.render()
+                patch_cache_control(response, private=True)
+                return response
+
+        # Invoke this custom handler.
+        handler = Handler()
+        handler.load_middleware()
+        return handler.get_response(request)
+
     def _get_dummy_headers(self, original_request=None):
         """
         Return a dict of META information to be included in a faked HttpRequest object to pass to
