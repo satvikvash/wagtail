@@ -681,7 +681,7 @@ class PreviewableMixin:
         # through the URL resolver
         class Handler(BaseHandler):
             def _get_response(self, request):
-                request.is_preview = False 
+                request.is_preview = False
                 request.preview_mode = preview_mode
                 response = obj.serve_preview(request, preview_mode)
                 if hasattr(response, "render") and callable(response.render):
