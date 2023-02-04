@@ -109,9 +109,9 @@ class TestDraftAccess(TestCase, WagtailTestUtils):
         request.user = user
         request.is_preview = is_preview
         return request
-    
+
     def test_edit_in_userbar_on_view_draft(self):
-        #This test is being created for issue 10002
+        # This test is being created for issue 10002
         self.user = self.login()
         event_index = Page.objects.get(id=2)
         response = event_index.make_draft_request()
@@ -122,7 +122,9 @@ class TestDraftAccess(TestCase, WagtailTestUtils):
             Context(
                 {
                     PAGE_TEMPLATE_VAR: self.child_page,
-                    "request": self.dummy_request(self.user, is_preview=request.is_preview),
+                    "request": self.dummy_request(
+                        self.user, is_preview=request.is_preview
+                    ),
                 }
             )
         )
