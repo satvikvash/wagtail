@@ -101,7 +101,7 @@ class TestDraftAccess(TestCase, WagtailTestUtils):
             HTTP_USER_AGENT="EvilHacker",
         )
         self.assertEqual(response.status_code, 403)
-    
+
     def dummy_request(
         self, user=None, *, is_preview=False, in_preview_panel=False, revision_id=None
     ):
