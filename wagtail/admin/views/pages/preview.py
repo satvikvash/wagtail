@@ -18,7 +18,7 @@ def view_draft(request, page_id):
     except IndexError:
         raise PermissionDenied
 
-    return page.make_preview_request(request, preview_mode)
+    return page.make_draft_request(request, preview_mode)
 
 
 class PreviewOnEdit(GenericPreviewOnEdit):
