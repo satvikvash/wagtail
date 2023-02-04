@@ -1,9 +1,10 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
-from django.test import TestCase
+from django.template import Context, Template
+from django.test import RequestFactory, TestCase
 from django.urls import reverse
 
-from wagtail.models import Page
+from wagtail.models import PAGE_TEMPLATE_VAR, Page
 from wagtail.test.testapp.models import SimplePage, StreamPage
 from wagtail.test.utils import WagtailTestUtils
 
@@ -100,3 +101,29 @@ class TestDraftAccess(TestCase, WagtailTestUtils):
             HTTP_USER_AGENT="EvilHacker",
         )
         self.assertEqual(response.status_code, 403)
+    
+    def dummy_request(
+        self, user=None, *, is_preview=False, in_preview_panel=False, revision_id=None
+    ):
+        request = RequestFactory().get("/")
+        request.user = user
+        request.is_preview = is_preview
+        return request
+    
+    def test_edit_in_userbar_on_view_draft(self):
+        #This test is being created for issue 10002
+        self.user = self.login()
+        event_index = Page.objects.get(id=2)
+        response = event_index.make_draft_request()
+        request = response.context_data["request"]
+        self.assertEqual(response.status_code, 200)
+        template = Template("{% load wagtailuserbar %}{% wagtailuserbar %}")
+        content = template.render(
+            Context(
+                {
+                    PAGE_TEMPLATE_VAR: self.child_page,
+                    "request": self.dummy_request(self.user, is_preview=request.is_preview),
+                }
+            )
+        )
+        self.assertIn("Edit this page", content)
